@@ -1,17 +1,17 @@
-import { Message, TextStreamMessage } from "@/components/message";
-import { openai } from "@ai-sdk/openai";
-import { CoreMessage, generateId } from "ai";
+import {Message, TextStreamMessage} from "@/components/message";
+import {openai} from "@ai-sdk/openai";
+import {CoreMessage, generateId} from "ai";
 import {
   createAI,
   createStreamableValue,
   getMutableAIState,
   streamUI,
 } from "ai/rsc";
-import { ReactNode } from "react";
-import { z } from "zod";
-import { CameraView } from "@/components/camera-view";
-import { HubView } from "@/components/hub-view";
-import { UsageView } from "@/components/usage-view";
+import {ReactNode} from "react";
+import {z} from "zod";
+import {CameraView} from "@/components/camera-view";
+import {HubView} from "@/components/hub-view";
+import {UsageView} from "@/components/usage-view";
 
 export interface Hub {
   climate: Record<"low" | "high", number>;
@@ -25,11 +25,11 @@ let hub: Hub = {
     high: 25,
   },
   lights: [
-    { name: "patio", status: true },
-    { name: "kitchen", status: false },
-    { name: "garage", status: true },
+    {name: "patio", status: true},
+    {name: "kitchen", status: false},
+    {name: "garage", status: true},
   ],
-  locks: [{ name: "back door", isLocked: true }],
+  locks: [{name: "back door", isLocked: true}],
 };
 
 const sendMessage = async (message: string) => {
@@ -39,24 +39,24 @@ const sendMessage = async (message: string) => {
 
   messages.update([
     ...(messages.get() as CoreMessage[]),
-    { role: "user", content: message },
+    {role: "user", content: message},
   ]);
 
   const contentStream = createStreamableValue("");
-  const textComponent = <TextStreamMessage content={contentStream.value} />;
+  const textComponent = <TextStreamMessage content={contentStream.value}/>;
 
-  const { value: stream } = await streamUI({
-    model: openai("gpt-4o"),
+  const {value: stream} = await streamUI({
+    model: openai("gpt-4o-mini"),
     system: `\
       - you are a friendly home automation assistant
       - reply in lower case
     `,
     messages: messages.get() as CoreMessage[],
-    text: async function* ({ content, done }) {
+    text: async function* ({content, done}) {
       if (done) {
         messages.done([
           ...(messages.get() as CoreMessage[]),
-          { role: "assistant", content },
+          {role: "assistant", content},
         ]);
 
         contentStream.done();
@@ -99,7 +99,7 @@ const sendMessage = async (message: string) => {
             },
           ]);
 
-          return <Message role="assistant" content={<CameraView />} />;
+          return <Message role="assistant" content={<CameraView/>}/>;
         },
       },
       viewHub: {
@@ -135,7 +135,7 @@ const sendMessage = async (message: string) => {
             },
           ]);
 
-          return <Message role="assistant" content={<HubView hub={hub} />} />;
+          return <Message role="assistant" content={<HubView hub={hub}/>}/>;
         },
       },
       updateHub: {
@@ -147,14 +147,14 @@ const sendMessage = async (message: string) => {
               high: z.number(),
             }),
             lights: z.array(
-              z.object({ name: z.string(), status: z.boolean() }),
+              z.object({name: z.string(), status: z.boolean()}),
             ),
             locks: z.array(
-              z.object({ name: z.string(), isLocked: z.boolean() }),
+              z.object({name: z.string(), isLocked: z.boolean()}),
             ),
           }),
         }),
-        generate: async function* ({ hub: newHub }) {
+        generate: async function* ({hub: newHub}) {
           hub = newHub;
           const toolCallId = generateId();
 
@@ -167,7 +167,7 @@ const sendMessage = async (message: string) => {
                   type: "tool-call",
                   toolCallId,
                   toolName: "updateHub",
-                  args: { hub },
+                  args: {hub},
                 },
               ],
             },
@@ -184,7 +184,7 @@ const sendMessage = async (message: string) => {
             },
           ]);
 
-          return <Message role="assistant" content={<HubView hub={hub} />} />;
+          return <Message role="assistant" content={<HubView hub={hub}/>}/>;
         },
       },
       viewUsage: {
@@ -192,7 +192,7 @@ const sendMessage = async (message: string) => {
         parameters: z.object({
           type: z.enum(["electricity", "water", "gas"]),
         }),
-        generate: async function* ({ type }) {
+        generate: async function* ({type}) {
           const toolCallId = generateId();
 
           messages.done([
@@ -204,7 +204,7 @@ const sendMessage = async (message: string) => {
                   type: "tool-call",
                   toolCallId,
                   toolName: "viewUsage",
-                  args: { type },
+                  args: {type},
                 },
               ],
             },
@@ -222,7 +222,7 @@ const sendMessage = async (message: string) => {
           ]);
 
           return (
-            <Message role="assistant" content={<UsageView type={type} />} />
+            <Message role="assistant" content={<UsageView type={type}/>}/>
           );
         },
       },
@@ -248,7 +248,7 @@ export const AI = createAI<AIState, UIState>({
   actions: {
     sendMessage,
   },
-  onSetAIState: async ({ state, done }) => {
+  onSetAIState: async ({state, done}) => {
     "use server";
 
     if (done) {
