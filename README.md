@@ -1,42 +1,79 @@
-# Generative UI with React Server Components and Vercel AI SDK
+# GenUI: AI-Powered Dynamic UI Generation
 
-> **Note**: Development of AI SDK RSC is currently paused. For more information, see [Migrating from AI SDK RSC](https://sdk.vercel.ai/docs/ai-sdk-rsc/migrating-to-ui#background).
+GenUI enables AI models to dynamically compose React interfaces by understanding natural language, selecting tools, and
+streaming composed UIs in real-time.
 
-This example demonstrates how to use the [Vercel AI SDK](https://sdk.vercel.ai/docs) with [Next.js](https://nextjs.org/) and the `streamUI` function to create generative user interfaces by streaming React Server Components to the client.
+## Architecture
 
-## Deploy your own
+```mermaid
+flowchart LR
+    subgraph YourApp["Your App - React/Next.js"]
+        UI["React Components<br/>AlbumCard, AlbumGrid..."]
+        Tools["Tools - server funcs<br/>getCurrentWeekAlbum, listBacklog..."]
+        AISDK["AI Runtime / SDK<br/>Vercel AI SDK"]
+    end
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Fai-sdk-preview-rsc-genui&env=OPENAI_API_KEY&envDescription=API%20keys%20needed%20for%20application&envLink=platform.openai.com)
+    subgraph Provider["LLM Provider"]
+        LLM["LLM API<br/>OpenAI, Anthropic..."]
+    end
 
-## How to use
-
-Run [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app) with [npm](https://docs.npmjs.com/cli/init), [Yarn](https://yarnpkg.com/lang/en/docs/cli/create/), or [pnpm](https://pnpm.io) to bootstrap the example:
-
-```bash
-npx create-next-app --example https://github.com/vercel-labs/ai-sdk-preview-rsc-genui ai-sdk-preview-rsc-genui-example
+    API[("DataSource")]
+    User -->|natural language| AISDK
+    AISDK <-->|API calls| LLM
+    AISDK <-->|tool calls| Tools
+    Tools -.->|optional| API
+    Tools --> UI
 ```
 
-```bash
-yarn create next-app --example https://github.com/vercel-labs/ai-sdk-preview-rsc-genui ai-sdk-preview-rsc-genui-example
+**Ownership:**
+• You: components, tools, SDK config, system prompt
+• AI SDK: tool orchestration, streaming
+• LLM: intent parsing, tool selection, UI composition
+
+## Request Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant SDK as AI SDK
+    participant L as LLM
+    participant T as Tools
+    participant D as Data
+    
+    U ->> SDK: "Show this week's album"
+    SDK ->> L: user message + system prompt + tools
+    L ->> T: getCurrentWeekAlbum()
+    T ->> D: read data files
+    D -->> T: album + rating data
+    T -->> L: complete data
+    L -->> SDK: <AlbumCard with data />
+    SDK -->> U: Rendered UI component
 ```
 
-```bash
-pnpm create next-app --example https://github.com/vercel-labs/ai-sdk-preview-rsc-genui ai-sdk-preview-rsc-genui-example
-```
+## Mental Model
 
-To run the example locally you need to:
+**Core Roles:**
+- **Runtime:** Orchestrates the conversation and streams UI
+- **Tools:** Fetch and return data (not UI)
+- **Components:** Render UI with the data
+- **LLM:** Decides which tools to call and which components to render
 
-1. Sign up for accounts with the AI providers you want to use (e.g., OpenAI, Anthropic).
-2. Obtain API keys for each provider.
-3. Set the required environment variables as shown in the `.env.example` file, but in a new file called `.env`.
-4. `npm install` to install the required dependencies.
-5. `npm run dev` to launch the development server.
+**Key Principle:** Tools return data. LLM composes UI.
 
+## Implementation
 
-## Learn More
+**Tools:** Return data objects, handle errors
+**Components:** Pure rendering with props
+**Data:** JSON files or APIs
 
-To learn more about Vercel AI SDK or Next.js take a look at the following resources:
+## Basic Guidelines
 
-- [Vercel AI SDK docs](https://sdk.vercel.ai/docs)
-- [Vercel AI Playground](https://play.vercel.ai)
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+• Use schemas for tool inputs/outputs
+• Keep components simple and reusable
+• Let the LLM handle UI composition
+
+## Tech Talk Notes
+
+**Value Prop:** Build blocks (components + tools), not screens. Natural language → composed UI.
+
+**Demo:** "What's this week's album?" → tool selection → data fetch → UI composition → result
