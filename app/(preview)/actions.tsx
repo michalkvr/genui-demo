@@ -5,10 +5,11 @@ import {
   createAI,
   createStreamableValue,
   getMutableAIState,
+  getAIState,
   streamUI,
 } from "ai/rsc";
 import {ReactNode} from "react";
-import {createTools} from "@/lib/tools/tool-factory";
+import {createTools} from "@/lib/tools";
 
 const sendMessage = async (message: string) => {
   "use server";
@@ -59,7 +60,10 @@ const sendMessage = async (message: string) => {
     tools: createTools(messages),
   });
 
-  return stream;
+  return [
+    <Message key={generateId()} role="user" content={message} />,
+    stream
+  ];
 };
 
 export type UIState = Array<ReactNode>;

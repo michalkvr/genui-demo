@@ -1,7 +1,7 @@
 "use client";
 
 import {ReactNode, useRef, useState} from "react";
-import {useActions} from "ai/rsc";
+import {useActions, useUIState} from "ai/rsc";
 import {Message} from "@/components/message";
 import {useScrollToBottom} from "@/components/use-scroll-to-bottom";
 import {motion} from "framer-motion";
@@ -9,13 +9,13 @@ import {MasonryIcon, VercelIcon} from "@/components/icons";
 import Link from "next/link";
 import ratings from "@/data/ratings.json";
 import albums from "@/data/albums.json";
-import { CommentsList } from "@/components/comments-list";
+import {CommentsList} from "@/components/comments-list";
 
 export default function Home() {
   const {sendMessage} = useActions();
+  const [messages, setMessages] = useUIState();
 
   const [input, setInput] = useState<string>("");
-  const [messages, setMessages] = useState<Array<ReactNode>>([]);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const [messagesContainerRef, messagesEndRef] =
@@ -89,7 +89,8 @@ export default function Home() {
             className="glass-effect rounded-xl px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-300 flex items-center gap-2 text-white font-medium"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L13.09 8.26L22 9L17 14L18.18 21L12 17.77L5.82 21L7 14L2 9L8.91 8.26L12 2Z" fill="currentColor"/>
+              <path d="M12 2L13.09 8.26L22 9L17 14L18.18 21L12 17.77L5.82 21L7 14L2 9L8.91 8.26L12 2Z"
+                    fill="currentColor"/>
             </svg>
             New Chat
           </button>
@@ -117,18 +118,8 @@ export default function Home() {
                     >
                       <button
                         onClick={async () => {
-                          setMessages((messages) => [
-                            ...messages,
-                            <Message
-                              key={messages.length}
-                              role="user"
-                              content={action.action}
-                            />,
-                          ]);
-                          const response: ReactNode = await sendMessage(
-                            action.action,
-                          );
-                          setMessages((messages) => [...messages, response]);
+                          const newMessages = await sendMessage(action.action);
+                          setMessages([...messages, ...newMessages]);
                         }}
                         className="w-full text-left glass-effect rounded-lg p-4 hover-lift group cursor-pointer border-0 bg-white/5 hover:bg-white/10 transition-all duration-300"
                       >
@@ -151,7 +142,7 @@ export default function Home() {
               </div>
             ) : (
               <>
-                {messages.map((message) => message)}
+                {messages.map((message: any) => message)}
                 <div ref={messagesEndRef}/>
               </>
             )}
@@ -163,15 +154,11 @@ export default function Home() {
               className="relative"
               onSubmit={async (event) => {
                 event.preventDefault();
-
-                setMessages((messages) => [
-                  ...messages,
-                  <Message key={messages.length} role="user" content={input}/>,
-                ]);
+                const currentInput = input;
                 setInput("");
 
-                const response: ReactNode = await sendMessage(input);
-                setMessages((messages) => [...messages, response]);
+                const newMessages = await sendMessage(currentInput);
+                setMessages([...messages, ...newMessages]);
               }}
             >
               <div className="glass-effect rounded-full p-2 bg-black/20 backdrop-blur-lg border border-white/20">
