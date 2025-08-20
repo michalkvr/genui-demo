@@ -5,7 +5,6 @@ import {
   createAI,
   createStreamableValue,
   getMutableAIState,
-  getAIState,
   streamUI,
 } from "ai/rsc";
 import {ReactNode} from "react";
@@ -54,16 +53,12 @@ const sendMessage = async (message: string) => {
       } else {
         contentStream.update(content);
       }
-
       return textComponent;
     },
     tools: createTools(messages),
   });
 
-  return [
-    <Message key={generateId()} role="user" content={message} />,
-    stream
-  ];
+  return [<Message key={generateId()} role="user" content={message}/>, stream];
 };
 
 export type UIState = Array<ReactNode>;
@@ -81,12 +76,5 @@ export const AI = createAI<AIState, UIState>({
   initialUIState: [],
   actions: {
     sendMessage,
-  },
-  onSetAIState: async ({state, done}) => {
-    "use server";
-
-    if (done) {
-      // save to database
-    }
   },
 });
