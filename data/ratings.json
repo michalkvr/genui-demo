@@ -21,5 +21,29 @@
     "albumId": "album2",
     "user": "anna",
     "score": 4
+  },
+  {
+    "albumId": "album1",
+    "user": "majkl",
+    "score": 5,
+    "comment": "asdasd"
+  },
+  {
+    "albumId": "album1",
+    "user": "majkl",
+    "score": 5,
+    "comment": "asdasd"
+  },
+  {
+    "albumId": "album1",
+    "user": "Majkl",
+    "score": 4,
+    "comment": "hihiahaha"
+  },
+  {
+    "albumId": "album1",
+    "user": "122",
+    "score": 2,
+    "comment": "adsasd"
   }
 ]

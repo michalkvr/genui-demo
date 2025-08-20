@@ -12,6 +12,8 @@ import {z} from "zod";
 import {AlbumCard} from "@/components/album-card";
 import {AlbumGrid} from "@/components/album-grid";
 import {StatsCard} from "@/components/stats-card";
+import {NominationFormWrapper} from "@/components/nomination-form-wrapper";
+import {RatingFormWrapper} from "@/components/rating-form-wrapper";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -67,6 +69,29 @@ function readBacklog(): BacklogAlbum[] {
   }
 }
 
+// Helper functions to write data to JSON files
+function writeBacklog(backlog: BacklogAlbum[]): void {
+  try {
+    const filePath = path.join(process.cwd(), 'data', 'backlog.json');
+    fs.writeFileSync(filePath, JSON.stringify(backlog, null, 2), 'utf8');
+  } catch (error) {
+    console.error('Error writing backlog:', error);
+  }
+}
+
+function writeRatings(ratings: Rating[]): void {
+  try {
+    const filePath = path.join(process.cwd(), 'data', 'ratings.json');
+    fs.writeFileSync(filePath, JSON.stringify(ratings, null, 2), 'utf8');
+  } catch (error) {
+    console.error('Error writing ratings:', error);
+  }
+}
+
+function generateCustomId(): string {
+  return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
 const sendMessage = async (message: string) => {
   "use server";
 
@@ -83,7 +108,18 @@ const sendMessage = async (message: string) => {
   const {value: stream} = await streamUI({
     model: openai("gpt-4o-mini"),
     system: `\
-      You are a UI orchestrator for Audio Odyssey. Use tools to fetch data from JSON, then return React components to render the result. Only use provided components: AlbumCard, AlbumGrid, StatsCard. Do not return raw HTML.
+      You are a UI orchestrator for Audio Odyssey, an album discovery and rating app. Use tools to fetch data from JSON, then return React components to render the result. 
+
+      Available components: AlbumCard, AlbumGrid, StatsCard, NominationForm, RatingForm.
+
+      Workflow:
+      1. When users want to "nominate" an album, use showNominationForm tool
+      2. When users want to "rate" an album or get a rating form, use showRatingForm tool  
+      3. When users ask about current week's album, use getCurrentWeekAlbum
+      4. When users ask about backlog or nominations, use listBacklog
+      5. When users ask about ratings for a specific album, use getAlbumRatings
+      
+      Always respond with React components, never raw HTML or text-only responses.
     `,
     messages: messages.get() as CoreMessage[],
     text: async function* ({content, done}) {
@@ -102,17 +138,29 @@ const sendMessage = async (message: string) => {
     },
     tools: {
       getCurrentWeekAlbum: {
-        description: "Get the current week's album (most recent by pickedAt)",
+        description: "Get the current week's album (most recent by pickedAt or nomination)",
         parameters: z.object({}),
         generate: async function* ({}) {
           const albums = readAlbums();
+          const backlog = readBacklog();
           const currentAlbum = albums
             .filter(album => album.pickedAt)
             .sort((a, b) => new Date(b.pickedAt!).getTime() - new Date(a.pickedAt!).getTime())[0];
-          
+          const latestNomination = backlog.length > 0 ? backlog[backlog.length - 1] : null;
+
+          let showAlbum = currentAlbum;
+          let showNomination = false;
+          if (latestNomination) {
+            // If there is a nomination and either no album or the album is older than the nomination
+            if (!currentAlbum || (currentAlbum && latestNomination.id && currentAlbum.pickedAt && parseInt(latestNomination.id.split('_')[1]) > new Date(currentAlbum.pickedAt).getTime())) {
+              showAlbum = latestNomination;
+              showNomination = true;
+            }
+          }
+
           const toolCallId = generateId();
 
-          if (!currentAlbum) {
+          if (!showAlbum) {
             messages.done([
               ...(messages.get() as CoreMessage[]),
               {
@@ -138,15 +186,17 @@ const sendMessage = async (message: string) => {
                 ],
               },
             ]);
-
             return <Message role="assistant" content="No current week album found." />;
           }
 
-          // Get ratings for this album
-          const ratings = readRatings().filter(r => r.albumId === currentAlbum.id);
-          const avg = ratings.length > 0 
-            ? ratings.reduce((sum, r) => sum + r.score, 0) / ratings.length 
-            : null;
+          // Get ratings for this album (only if it's from albums.json)
+          let avg = null;
+          let ratingsCount = 0;
+          if (!showNomination) {
+            const ratings = readRatings().filter(r => r.albumId === showAlbum.id);
+            avg = ratings.length > 0 ? ratings.reduce((sum, r) => sum + r.score, 0) / ratings.length : null;
+            ratingsCount = ratings.length;
+          }
 
           messages.done([
             ...(messages.get() as CoreMessage[]),
@@ -168,7 +218,7 @@ const sendMessage = async (message: string) => {
                   type: "tool-result",
                   toolName: "getCurrentWeekAlbum",
                   toolCallId,
-                  result: currentAlbum,
+                  result: showAlbum,
                 },
               ],
             },
@@ -180,12 +230,12 @@ const sendMessage = async (message: string) => {
               content={
                 <div className="flex flex-col gap-4">
                   <AlbumCard 
-                    title={currentAlbum.title}
-                    artist={currentAlbum.artist}
-                    genre={currentAlbum.genre}
-                    coverUrl={currentAlbum.coverUrl}
+                    title={showAlbum.title}
+                    artist={showAlbum.artist}
+                    genre={showAlbum.genre}
+                    coverUrl={showAlbum.coverUrl}
                   />
-                  <StatsCard avg={avg} count={ratings.length} />
+                  {!showNomination && <StatsCard avg={avg} count={ratingsCount} />}
                 </div>
               }
             />
@@ -291,6 +341,127 @@ const sendMessage = async (message: string) => {
             <Message 
               role="assistant" 
               content={<StatsCard avg={avg} count={ratings.length} />}
+            />
+          );
+        },
+      },
+      showNominationForm: {
+        description: "Show the album nomination form when user wants to nominate an album",
+        parameters: z.object({}),
+        generate: async function* ({}) {
+          const toolCallId = generateId();
+
+          messages.done([
+            ...(messages.get() as CoreMessage[]),
+            {
+              role: "assistant",
+              content: [
+                {
+                  type: "tool-call",
+                  toolCallId,
+                  toolName: "showNominationForm",
+                  args: {},
+                },
+              ],
+            },
+            {
+              role: "tool",
+              content: [
+                {
+                  type: "tool-result",
+                  toolName: "showNominationForm",
+                  toolCallId,
+                  result: "Nomination form displayed",
+                },
+              ],
+            },
+          ]);
+
+          return (
+            <Message 
+              role="assistant" 
+              content={<NominationFormWrapper />}
+            />
+          );
+        },
+      },
+      showRatingForm: {
+        description: "Show the rating form for the current week's album",
+        parameters: z.object({}),
+        generate: async function* ({}) {
+          const albums = readAlbums();
+          const currentAlbum = albums
+            .filter(album => album.pickedAt)
+            .sort((a, b) => new Date(b.pickedAt!).getTime() - new Date(a.pickedAt!).getTime())[0];
+          
+          const toolCallId = generateId();
+
+          if (!currentAlbum) {
+            messages.done([
+              ...(messages.get() as CoreMessage[]),
+              {
+                role: "assistant",
+                content: [
+                  {
+                    type: "tool-call",
+                    toolCallId,
+                    toolName: "showRatingForm",
+                    args: {},
+                  },
+                ],
+              },
+              {
+                role: "tool",
+                content: [
+                  {
+                    type: "tool-result",
+                    toolName: "showRatingForm",
+                    toolCallId,
+                    result: "No current album found",
+                  },
+                ],
+              },
+            ]);
+
+            return <Message role="assistant" content="No current album found to rate." />;
+          }
+
+          messages.done([
+            ...(messages.get() as CoreMessage[]),
+            {
+              role: "assistant",
+              content: [
+                {
+                  type: "tool-call",
+                  toolCallId,
+                  toolName: "showRatingForm",
+                  args: {},
+                },
+              ],
+            },
+            {
+              role: "tool",
+              content: [
+                {
+                  type: "tool-result",
+                  toolName: "showRatingForm",
+                  toolCallId,
+                  result: "Rating form displayed",
+                },
+              ],
+            },
+          ]);
+
+          return (
+            <Message 
+              role="assistant" 
+              content={
+                <RatingFormWrapper
+                  albumTitle={currentAlbum.title}
+                  albumArtist={currentAlbum.artist}
+                  albumId={currentAlbum.id}
+                />
+              }
             />
           );
         },

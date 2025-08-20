@@ -14,5 +14,13 @@
     "genre": "Progressive Rock",
     "coverUrl": "https://example.com/dark-side.jpg",
     "pickedAt": "2025-08-01"
+  },
+  {
+    "id": "backlog1",
+    "title": "Thriller",
+    "artist": "Michael Jackson",
+    "genre": "Pop",
+    "coverUrl": "https://example.com/thriller.jpg",
+    "pickedAt": "2025-08-20T11:36:42.985Z"
   }
 ]

@@ -24,12 +24,17 @@ export default function Home() {
       label: "week's album with artist and average rating",
       action: "Show this week's album with artist and average rating"
     },
-    {title: "List albums", label: "in the backlog", action: "List albums in the backlog"},
     {
-      title: "Summarize",
-      label: "ratings for current album",
-      action: "Summarize ratings for current album",
+      title: "Nominate",
+      label: "an album for consideration",
+      action: "I want to nominate an album"
     },
+    {
+      title: "Rate",
+      label: "the current week's album",
+      action: "I want to rate the current album"
+    },
+    {title: "List albums", label: "in the backlog", action: "List albums in the backlog"},
     {
       title: "Show me",
       label: "all album ratings",
