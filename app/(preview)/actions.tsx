@@ -9,28 +9,63 @@ import {
 } from "ai/rsc";
 import {ReactNode} from "react";
 import {z} from "zod";
-import {CameraView} from "@/components/camera-view";
-import {HubView} from "@/components/hub-view";
-import {UsageView} from "@/components/usage-view";
+import {AlbumCard} from "@/components/album-card";
+import {AlbumGrid} from "@/components/album-grid";
+import {StatsCard} from "@/components/stats-card";
+import * as fs from "fs";
+import * as path from "path";
 
-export interface Hub {
-  climate: Record<"low" | "high", number>;
-  lights: Array<{ name: string; status: boolean }>;
-  locks: Array<{ name: string; isLocked: boolean }>;
+interface Album {
+  id: string;
+  title: string;
+  artist: string;
+  genre?: string;
+  coverUrl?: string;
+  pickedAt?: string;
 }
 
-let hub: Hub = {
-  climate: {
-    low: 23,
-    high: 25,
-  },
-  lights: [
-    {name: "patio", status: true},
-    {name: "kitchen", status: false},
-    {name: "garage", status: true},
-  ],
-  locks: [{name: "back door", isLocked: true}],
-};
+interface Rating {
+  albumId: string;
+  user: string;
+  score: number;
+  comment?: string;
+}
+
+interface BacklogAlbum {
+  id: string;
+  title: string;
+  artist: string;
+  genre?: string;
+  coverUrl?: string;
+}
+
+// Helper functions to read data from JSON files
+function readAlbums(): Album[] {
+  try {
+    const data = fs.readFileSync(path.join(process.cwd(), 'data', 'albums.json'), 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    return [];
+  }
+}
+
+function readRatings(): Rating[] {
+  try {
+    const data = fs.readFileSync(path.join(process.cwd(), 'data', 'ratings.json'), 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    return [];
+  }
+}
+
+function readBacklog(): BacklogAlbum[] {
+  try {
+    const data = fs.readFileSync(path.join(process.cwd(), 'data', 'backlog.json'), 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    return [];
+  }
+}
 
 const sendMessage = async (message: string) => {
   "use server";
@@ -48,8 +83,7 @@ const sendMessage = async (message: string) => {
   const {value: stream} = await streamUI({
     model: openai("gpt-4o-mini"),
     system: `\
-      - you are a friendly home automation assistant
-      - reply in lower case
+      You are a UI orchestrator for Audio Odyssey. Use tools to fetch data from JSON, then return React components to render the result. Only use provided components: AlbumCard, AlbumGrid, StatsCard. Do not return raw HTML.
     `,
     messages: messages.get() as CoreMessage[],
     text: async function* ({content, done}) {
@@ -67,11 +101,52 @@ const sendMessage = async (message: string) => {
       return textComponent;
     },
     tools: {
-      viewCameras: {
-        description: "view current active cameras",
+      getCurrentWeekAlbum: {
+        description: "Get the current week's album (most recent by pickedAt)",
         parameters: z.object({}),
         generate: async function* ({}) {
+          const albums = readAlbums();
+          const currentAlbum = albums
+            .filter(album => album.pickedAt)
+            .sort((a, b) => new Date(b.pickedAt!).getTime() - new Date(a.pickedAt!).getTime())[0];
+          
           const toolCallId = generateId();
+
+          if (!currentAlbum) {
+            messages.done([
+              ...(messages.get() as CoreMessage[]),
+              {
+                role: "assistant",
+                content: [
+                  {
+                    type: "tool-call",
+                    toolCallId,
+                    toolName: "getCurrentWeekAlbum",
+                    args: {},
+                  },
+                ],
+              },
+              {
+                role: "tool",
+                content: [
+                  {
+                    type: "tool-result",
+                    toolName: "getCurrentWeekAlbum",
+                    toolCallId,
+                    result: "No current week album found",
+                  },
+                ],
+              },
+            ]);
+
+            return <Message role="assistant" content="No current week album found." />;
+          }
+
+          // Get ratings for this album
+          const ratings = readRatings().filter(r => r.albumId === currentAlbum.id);
+          const avg = ratings.length > 0 
+            ? ratings.reduce((sum, r) => sum + r.score, 0) / ratings.length 
+            : null;
 
           messages.done([
             ...(messages.get() as CoreMessage[]),
@@ -81,7 +156,7 @@ const sendMessage = async (message: string) => {
                 {
                   type: "tool-call",
                   toolCallId,
-                  toolName: "viewCameras",
+                  toolName: "getCurrentWeekAlbum",
                   args: {},
                 },
               ],
@@ -91,138 +166,132 @@ const sendMessage = async (message: string) => {
               content: [
                 {
                   type: "tool-result",
-                  toolName: "viewCameras",
+                  toolName: "getCurrentWeekAlbum",
                   toolCallId,
-                  result: `The active cameras are currently displayed on the screen`,
-                },
-              ],
-            },
-          ]);
-
-          return <Message role="assistant" content={<CameraView/>}/>;
-        },
-      },
-      viewHub: {
-        description:
-          "view the hub that contains current quick summary and actions for temperature, lights, and locks",
-        parameters: z.object({}),
-        generate: async function* ({}) {
-          const toolCallId = generateId();
-
-          messages.done([
-            ...(messages.get() as CoreMessage[]),
-            {
-              role: "assistant",
-              content: [
-                {
-                  type: "tool-call",
-                  toolCallId,
-                  toolName: "viewHub",
-                  args: {},
-                },
-              ],
-            },
-            {
-              role: "tool",
-              content: [
-                {
-                  type: "tool-result",
-                  toolName: "viewHub",
-                  toolCallId,
-                  result: hub,
-                },
-              ],
-            },
-          ]);
-
-          return <Message role="assistant" content={<HubView hub={hub}/>}/>;
-        },
-      },
-      updateHub: {
-        description: "update the hub with new values",
-        parameters: z.object({
-          hub: z.object({
-            climate: z.object({
-              low: z.number(),
-              high: z.number(),
-            }),
-            lights: z.array(
-              z.object({name: z.string(), status: z.boolean()}),
-            ),
-            locks: z.array(
-              z.object({name: z.string(), isLocked: z.boolean()}),
-            ),
-          }),
-        }),
-        generate: async function* ({hub: newHub}) {
-          hub = newHub;
-          const toolCallId = generateId();
-
-          messages.done([
-            ...(messages.get() as CoreMessage[]),
-            {
-              role: "assistant",
-              content: [
-                {
-                  type: "tool-call",
-                  toolCallId,
-                  toolName: "updateHub",
-                  args: {hub},
-                },
-              ],
-            },
-            {
-              role: "tool",
-              content: [
-                {
-                  type: "tool-result",
-                  toolName: "updateHub",
-                  toolCallId,
-                  result: `The hub has been updated with the new values`,
-                },
-              ],
-            },
-          ]);
-
-          return <Message role="assistant" content={<HubView hub={hub}/>}/>;
-        },
-      },
-      viewUsage: {
-        description: "view current usage for electricity, water, or gas",
-        parameters: z.object({
-          type: z.enum(["electricity", "water", "gas"]),
-        }),
-        generate: async function* ({type}) {
-          const toolCallId = generateId();
-
-          messages.done([
-            ...(messages.get() as CoreMessage[]),
-            {
-              role: "assistant",
-              content: [
-                {
-                  type: "tool-call",
-                  toolCallId,
-                  toolName: "viewUsage",
-                  args: {type},
-                },
-              ],
-            },
-            {
-              role: "tool",
-              content: [
-                {
-                  type: "tool-result",
-                  toolName: "viewUsage",
-                  toolCallId,
-                  result: `The current usage for ${type} is currently displayed on the screen`,
+                  result: currentAlbum,
                 },
               ],
             },
           ]);
 
           return (
-            <Message role="assistant" content={<UsageView type={type}/>}/>
+            <Message 
+              role="assistant" 
+              content={
+                <div className="flex flex-col gap-4">
+                  <AlbumCard 
+                    title={currentAlbum.title}
+                    artist={currentAlbum.artist}
+                    genre={currentAlbum.genre}
+                    coverUrl={currentAlbum.coverUrl}
+                  />
+                  <StatsCard avg={avg} count={ratings.length} />
+                </div>
+              }
+            />
+          );
+        },
+      },
+      listBacklog: {
+        description: "List albums in the backlog",
+        parameters: z.object({
+          limit: z.number().optional(),
+        }),
+        generate: async function* ({limit}) {
+          const backlog = readBacklog();
+          const limitedBacklog = limit ? backlog.slice(0, limit) : backlog;
+          const toolCallId = generateId();
+
+          messages.done([
+            ...(messages.get() as CoreMessage[]),
+            {
+              role: "assistant",
+              content: [
+                {
+                  type: "tool-call",
+                  toolCallId,
+                  toolName: "listBacklog",
+                  args: {limit},
+                },
+              ],
+            },
+            {
+              role: "tool",
+              content: [
+                {
+                  type: "tool-result",
+                  toolName: "listBacklog",
+                  toolCallId,
+                  result: limitedBacklog,
+                },
+              ],
+            },
+          ]);
+
+          return (
+            <Message 
+              role="assistant" 
+              content={<AlbumGrid albums={limitedBacklog} />}
+            />
+          );
+        },
+      },
+      getAlbumRatings: {
+        description: "Get ratings overview for a specific album",
+        parameters: z.object({
+          albumId: z.string(),
+        }),
+        generate: async function* ({albumId}) {
+          const ratings = readRatings().filter(r => r.albumId === albumId);
+          const avg = ratings.length > 0 
+            ? ratings.reduce((sum, r) => sum + r.score, 0) / ratings.length 
+            : null;
+          const comments = ratings.filter(r => r.comment).map(r => ({
+            user: r.user,
+            comment: r.comment,
+            score: r.score
+          }));
+
+          const result = {
+            albumId,
+            avg,
+            count: ratings.length,
+            comments
+          };
+
+          const toolCallId = generateId();
+
+          messages.done([
+            ...(messages.get() as CoreMessage[]),
+            {
+              role: "assistant",
+              content: [
+                {
+                  type: "tool-call",
+                  toolCallId,
+                  toolName: "getAlbumRatings",
+                  args: {albumId},
+                },
+              ],
+            },
+            {
+              role: "tool",
+              content: [
+                {
+                  type: "tool-result",
+                  toolName: "getAlbumRatings",
+                  toolCallId,
+                  result: result,
+                },
+              ],
+            },
+          ]);
+
+          return (
+            <Message 
+              role="assistant" 
+              content={<StatsCard avg={avg} count={ratings.length} />}
+            />
           );
         },
       },

@@ -1,15 +1,15 @@
 "use client";
 
-import { ReactNode, useRef, useState } from "react";
-import { useActions } from "ai/rsc";
-import { Message } from "@/components/message";
-import { useScrollToBottom } from "@/components/use-scroll-to-bottom";
-import { motion } from "framer-motion";
-import { MasonryIcon, VercelIcon } from "@/components/icons";
+import {ReactNode, useRef, useState} from "react";
+import {useActions} from "ai/rsc";
+import {Message} from "@/components/message";
+import {useScrollToBottom} from "@/components/use-scroll-to-bottom";
+import {motion} from "framer-motion";
+import {MasonryIcon, VercelIcon} from "@/components/icons";
 import Link from "next/link";
 
 export default function Home() {
-  const { sendMessage } = useActions();
+  const {sendMessage} = useActions();
 
   const [input, setInput] = useState<string>("");
   const [messages, setMessages] = useState<Array<ReactNode>>([]);
@@ -19,17 +19,21 @@ export default function Home() {
     useScrollToBottom<HTMLDivElement>();
 
   const suggestedActions = [
-    { title: "View all", label: "my cameras", action: "View all my cameras" },
-    { title: "Show me", label: "my smart home hub", action: "Show me my smart home hub" },
     {
-      title: "How much",
-      label: "electricity have I used this month?",
-      action: "Show electricity usage",
+      title: "Show this",
+      label: "week's album with artist and average rating",
+      action: "Show this week's album with artist and average rating"
+    },
+    {title: "List albums", label: "in the backlog", action: "List albums in the backlog"},
+    {
+      title: "Summarize",
+      label: "ratings for current album",
+      action: "Summarize ratings for current album",
     },
     {
-      title: "How much",
-      label: "water have I used this month?",
-      action: "Show water usage",
+      title: "Show me",
+      label: "all album ratings",
+      action: "Show me all album ratings",
     },
   ];
 
@@ -42,11 +46,12 @@ export default function Home() {
         >
           {messages.length === 0 && (
             <motion.div className="h-[350px] px-4 w-full md:w-[500px] md:px-0 pt-20">
-              <div className="border rounded-lg p-6 flex flex-col gap-4 text-zinc-500 text-sm dark:text-zinc-400 dark:border-zinc-700">
+              <div
+                className="border rounded-lg p-6 flex flex-col gap-4 text-zinc-500 text-sm dark:text-zinc-400 dark:border-zinc-700">
                 <p className="flex flex-row justify-center gap-4 items-center text-zinc-900 dark:text-zinc-50">
-                  <VercelIcon size={16} />
+                  <VercelIcon size={16}/>
                   <span>+</span>
-                  <MasonryIcon />
+                  <MasonryIcon/>
                 </p>
                 <p>
                   The streamUI function allows you to stream React Server
@@ -69,16 +74,16 @@ export default function Home() {
             </motion.div>
           )}
           {messages.map((message) => message)}
-          <div ref={messagesEndRef} />
+          <div ref={messagesEndRef}/>
         </div>
 
         <div className="grid sm:grid-cols-2 gap-2 w-full px-4 md:px-0 mx-auto md:max-w-[500px] mb-4">
           {messages.length === 0 &&
             suggestedActions.map((action, index) => (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.01 * index }}
+                initial={{opacity: 0, y: 20}}
+                animate={{opacity: 1, y: 0}}
+                transition={{delay: 0.01 * index}}
                 key={index}
                 className={index > 1 ? "hidden sm:block" : "block"}
               >
@@ -115,7 +120,7 @@ export default function Home() {
 
             setMessages((messages) => [
               ...messages,
-              <Message key={messages.length} role="user" content={input} />,
+              <Message key={messages.length} role="user" content={input}/>,
             ]);
             setInput("");
 

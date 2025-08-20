@@ -1,0 +1,25 @@
+[
+  {
+    "albumId": "album1",
+    "user": "john",
+    "score": 5,
+    "comment": "Amazing album, every track is perfect!"
+  },
+  {
+    "albumId": "album1",
+    "user": "sarah",
+    "score": 4,
+    "comment": "Great classic rock album"
+  },
+  {
+    "albumId": "album2",
+    "user": "mike",
+    "score": 5,
+    "comment": "A masterpiece of progressive rock"
+  },
+  {
+    "albumId": "album2",
+    "user": "anna",
+    "score": 4
+  }
+]

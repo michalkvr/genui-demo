@@ -1,0 +1,18 @@
+[
+  {
+    "id": "album1",
+    "title": "Abbey Road",
+    "artist": "The Beatles",
+    "genre": "Rock",
+    "coverUrl": "https://example.com/abbey-road.jpg",
+    "pickedAt": "2025-08-15"
+  },
+  {
+    "id": "album2",
+    "title": "Dark Side of the Moon",
+    "artist": "Pink Floyd",
+    "genre": "Progressive Rock",
+    "coverUrl": "https://example.com/dark-side.jpg",
+    "pickedAt": "2025-08-01"
+  }
+]
