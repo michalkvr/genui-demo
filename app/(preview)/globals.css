@@ -3,9 +3,16 @@
 @tailwind utilities;
 
 :root {
-    --foreground-rgb: 0, 0, 0;
-    --background-start-rgb: 214, 219, 220;
-    --background-end-rgb: 255, 255, 255;
+    --audio-odyssey-black: #191414;
+    --audio-odyssey-dark-gray: #121212;
+    --audio-odyssey-gray: #1e1e1e;
+    --audio-odyssey-light-gray: #282828;
+    --audio-odyssey-green: #1db954;
+    --audio-odyssey-white: #ffffff;
+    --audio-odyssey-text-gray: #b3b3b3;
+    --audio-odyssey-purple: #8b5cf6;
+    --audio-odyssey-pink: #ec4899;
+    --audio-odyssey-orange: #f59e0b;
 }
 
 @font-face {
@@ -14,29 +21,71 @@
 }
 
 * {
-    font-family: "uncut sans", sans-serif;
-}
-
-@media (prefers-color-scheme: dark) {
-    :root {
-        --foreground-rgb: 255, 255, 255;
-        --background-start-rgb: 0, 0, 0;
-        --background-end-rgb: 0, 0, 0;
-    }
+    font-family: "uncut sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    box-sizing: border-box;
 }
 
 body {
-    color: rgb(var(--foreground-rgb));
-    background: linear-gradient(
-            to bottom,
-            transparent,
-            rgb(var(--background-end-rgb))
-        )
-        rgb(var(--background-start-rgb));
+    background: linear-gradient(135deg, var(--audio-odyssey-dark-gray) 0%, var(--audio-odyssey-black) 100%);
+    color: var(--audio-odyssey-white);
+    min-height: 100vh;
+    margin: 0;
+    overflow-x: hidden;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--audio-odyssey-dark-gray);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--audio-odyssey-light-gray);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--audio-odyssey-text-gray);
+}
+
+/* Spotify-inspired animations */
+@keyframes pulse-green {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(29, 185, 84, 0.7); }
+    50% { box-shadow: 0 0 0 10px rgba(29, 185, 84, 0); }
+}
+
+@keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.gradient-bg {
+    background: linear-gradient(-45deg, var(--audio-odyssey-purple), var(--audio-odyssey-pink), var(--audio-odyssey-green), var(--audio-odyssey-orange));
+    background-size: 400% 400%;
+    animation: gradient-shift 15s ease infinite;
 }
 
 @layer utilities {
     .text-balance {
         text-wrap: balance;
+    }
+    
+    .glass-effect {
+        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .hover-lift {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .hover-lift:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
     }
 }
