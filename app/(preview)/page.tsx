@@ -7,6 +7,9 @@ import {useScrollToBottom} from "@/components/use-scroll-to-bottom";
 import {motion} from "framer-motion";
 import {MasonryIcon, VercelIcon} from "@/components/icons";
 import Link from "next/link";
+import ratings from "@/data/ratings.json";
+import albums from "@/data/albums.json";
+import { CommentsList } from "@/components/comments-list";
 
 export default function Home() {
   const {sendMessage} = useActions();
@@ -20,25 +23,34 @@ export default function Home() {
 
   const suggestedActions = [
     {
-      title: "Show this",
-      label: "week's album with artist and average rating",
+      title: "Current Album",
+      label: "Show this week's pick",
       action: "Show this week's album with artist and average rating"
     },
     {
       title: "Nominate",
-      label: "an album for consideration",
+      label: "Add album to consideration",
       action: "I want to nominate an album"
     },
     {
-      title: "Rate",
-      label: "the current week's album",
+      title: "Rate Album",
+      label: "Rate current week's album",
       action: "I want to rate the current album"
     },
-    {title: "List albums", label: "in the backlog", action: "List albums in the backlog"},
     {
-      title: "Show me",
-      label: "all album ratings",
-      action: "Show me all album ratings",
+      title: "Backlog",
+      label: "View pending nominations",
+      action: "List albums in the backlog"
+    },
+    {
+      title: "All Ratings",
+      label: "View ratings table",
+      action: "Show me all album ratings"
+    },
+    {
+      title: "Comments",
+      label: "View ratings with comments",
+      action: "Show me all ratings with comments"
     },
   ];
 
@@ -66,6 +78,24 @@ export default function Home() {
         </div>
       </div>
 
+      {/* New Conversation Button */}
+      {messages.length > 0 && (
+        <div className="fixed top-6 right-6 z-10">
+          <button
+            onClick={() => {
+              setMessages([]);
+              setInput("");
+            }}
+            className="glass-effect rounded-xl px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-300 flex items-center gap-2 text-white font-medium"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L13.09 8.26L22 9L17 14L18.18 21L12 17.77L5.82 21L7 14L2 9L8.91 8.26L12 2Z" fill="currentColor"/>
+            </svg>
+            New Chat
+          </button>
+        </div>
+      )}
+
       {/* Main content area */}
       <div className="flex-1 flex flex-row justify-center px-4 lg:px-8">
         <div className="w-full max-w-6xl flex flex-col gap-8 pt-8 pb-20">
@@ -74,79 +104,57 @@ export default function Home() {
             ref={messagesContainerRef}
             className="flex flex-col gap-6 min-h-[400px] overflow-y-auto"
           >
-            {messages.length === 0 && (
-              <motion.div
-                initial={{opacity: 0, scale: 0.95}}
-                animate={{opacity: 1, scale: 1}}
-                className="flex flex-col items-center justify-center py-12"
-              >
-                <div className="glass-effect rounded-2xl p-8 max-w-2xl mx-auto text-center backdrop-blur-lg">
-                  <div className="flex flex-row justify-center gap-4 items-center mb-6">
-                    <div className="w-12 h-12 rounded-full bg-[#1db954] flex items-center justify-center">
-                      <VercelIcon size={24} color="white"/>
-                    </div>
-                    <span className="text-2xl font-bold text-white">×</span>
-                    <div
-                      className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
-                      <MasonryIcon color="white"/>
-                    </div>
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-4">
-                    Welcome to Audio Odyssey
-                  </h3>
-                  <p className="text-white/70 text-lg leading-relaxed">
-                    Your AI-powered music discovery companion. Explore albums, get personalized recommendations,
-                    and dive deep into your musical journey with intelligent conversations.
-                  </p>
+            {messages.length === 0 ? (
+              /* Centered hint cards when chat is empty */
+              <div className="flex-1 flex items-center justify-center">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-5xl w-full">
+                  {suggestedActions.map((action, index) => (
+                    <motion.div
+                      initial={{opacity: 0, y: 20}}
+                      animate={{opacity: 1, y: 0}}
+                      transition={{delay: 0.05 * index, type: "spring", stiffness: 100}}
+                      key={index}
+                    >
+                      <button
+                        onClick={async () => {
+                          setMessages((messages) => [
+                            ...messages,
+                            <Message
+                              key={messages.length}
+                              role="user"
+                              content={action.action}
+                            />,
+                          ]);
+                          const response: ReactNode = await sendMessage(
+                            action.action,
+                          );
+                          setMessages((messages) => [...messages, response]);
+                        }}
+                        className="w-full text-left glass-effect rounded-lg p-4 hover-lift group cursor-pointer border-0 bg-white/5 hover:bg-white/10 transition-all duration-300"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-[#1db954] group-hover:animate-pulse"></div>
+                          <div className="flex-1 min-w-0">
+                            <span
+                              className="block font-semibold text-white text-sm group-hover:text-[#1db954] transition-colors truncate">
+                              {action.title}
+                            </span>
+                            <span className="block text-white/60 text-xs mt-0.5 truncate">
+                              {action.label}
+                            </span>
+                          </div>
+                        </div>
+                      </button>
+                    </motion.div>
+                  ))}
                 </div>
-              </motion.div>
+              </div>
+            ) : (
+              <>
+                {messages.map((message) => message)}
+                <div ref={messagesEndRef}/>
+              </>
             )}
-            {messages.map((message) => message)}
-            <div ref={messagesEndRef}/>
-          </div>
-
-          {/* Suggested actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto w-full pb-12">
-            {messages.length === 0 &&
-              suggestedActions.map((action, index) => (
-                <motion.div
-                  initial={{opacity: 0, y: 30}}
-                  animate={{opacity: 1, y: 0}}
-                  transition={{delay: 0.1 * index, type: "spring", stiffness: 100}}
-                  key={index}
-                >
-                  <button
-                    onClick={async () => {
-                      setMessages((messages) => [
-                        ...messages,
-                        <Message
-                          key={messages.length}
-                          role="user"
-                          content={action.action}
-                        />,
-                      ]);
-                      const response: ReactNode = await sendMessage(
-                        action.action,
-                      );
-                      setMessages((messages) => [...messages, response]);
-                    }}
-                    className="w-full text-left glass-effect rounded-xl p-6 hover-lift group cursor-pointer border-0 bg-white/5 hover:bg-white/10 transition-all duration-300"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-3 h-3 rounded-full bg-[#1db954] group-hover:animate-pulse"></div>
-                      <div className="flex-1">
-                        <span
-                          className="block font-semibold text-white text-lg group-hover:text-[#1db954] transition-colors">
-                          {action.title}
-                        </span>
-                        <span className="block text-white/60 mt-1">
-                          {action.label}
-                        </span>
-                      </div>
-                    </div>
-                  </button>
-                </motion.div>
-              ))}
           </div>
 
           {/* Input form */}
@@ -187,6 +195,7 @@ export default function Home() {
               </div>
             </form>
           </div>
+
         </div>
       </div>
     </div>

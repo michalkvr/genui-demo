@@ -1,19 +1,5 @@
 [
   {
-    "id": "backlog2",
-    "title": "Nevermind",
-    "artist": "Nirvana",
-    "genre": "Grunge",
-    "coverUrl": "https://example.com/nevermind.jpg"
-  },
-  {
-    "id": "backlog3",
-    "title": "The Wall",
-    "artist": "Pink Floyd",
-    "genre": "Progressive Rock",
-    "coverUrl": "https://example.com/the-wall.jpg"
-  },
-  {
     "title": "1212",
     "artist": "122",
     "genre": "1212"

@@ -1,11 +1,11 @@
-export const BotIcon = () => {
+export const BotIcon = ({ size = 16, color = "currentColor" }: { size?: number; color?: string }) => {
   return (
     <svg
-      height="16"
+      height={size}
+      width={size}
       strokeLinejoin="round"
       viewBox="0 0 16 16"
-      width="16"
-      style={{ color: "currentcolor" }}
+      style={{ color }}
     >
       <path
         fillRule="evenodd"
@@ -17,15 +17,15 @@ export const BotIcon = () => {
   );
 };
 
-export const UserIcon = () => {
+export const UserIcon = ({ size = 16, color = "currentColor" }: { size?: number; color?: string }) => {
   return (
     <svg
       data-testid="geist-icon"
-      height="16"
+      height={size}
+      width={size}
       strokeLinejoin="round"
       viewBox="0 0 16 16"
-      width="16"
-      style={{ color: "currentcolor" }}
+      style={{ color }}
     >
       <path
         fillRule="evenodd"

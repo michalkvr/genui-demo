@@ -64,90 +64,88 @@ export function RatingForm({albumTitle, albumArtist, albumId, onSubmit, onCancel
       initial={{opacity: 0, scale: 0.95}}
       animate={{opacity: 1, scale: 1}}
       exit={{opacity: 0, scale: 0.95}}
-      className="w-full max-w-2xl mx-auto"
+      className="w-full mx-auto"
     >
       <div
-        className="glass-effect rounded-2xl p-8 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm border border-white/20">
+        className="glass-effect rounded-xl p-6 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm border border-white/20">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-12 h-12 bg-[#1db954] rounded-full flex items-center justify-center">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-8 h-8 bg-[#1db954] rounded-full flex items-center justify-center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 2L15.09 8.26L22 9L17 14L18.18 21L12 17.77L5.82 21L7 14L2 9L8.91 8.26L12 2Z" fill="white"/>
             </svg>
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-white">Rate Album</h2>
-            <p className="text-white/70">{albumTitle} by {albumArtist}</p>
+            <h2 className="text-lg font-bold text-white">Rate Album</h2>
+            <p className="text-white/70 text-sm">{albumTitle} by {albumArtist}</p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* User Name Field */}
-          <div className="space-y-2">
-            <label htmlFor="user" className="block text-white font-medium">
-              Your Name *
-            </label>
-            <input
-              id="user"
-              type="text"
-              value={user}
-              onChange={(e) => setUser(e.target.value)}
-              placeholder="Enter your name..."
-              className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/50 outline-none focus:border-[#1db954] focus:ring-2 focus:ring-[#1db954]/20 transition-all duration-300"
-              required
-            />
-          </div>
-
-          {/* Rating Stars */}
-          <div className="space-y-4">
-            <label className="block text-white font-medium">
-              Your Rating *
-            </label>
-
-            <div className="flex items-center justify-center gap-2">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  onClick={() => setScore(star)}
-                  onMouseEnter={() => setHoveredStar(star)}
-                  onMouseLeave={() => setHoveredStar(0)}
-                  className={`relative w-12 h-12 transition-all duration-200 ${
-                    star <= (hoveredStar || score) ? "scale-110" : "scale-100"
-                  }`}
-                >
-                  <svg
-                    width="48"
-                    height="48"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    className={`${
-                      star <= (hoveredStar || score)
-                        ? "text-[#1db954] drop-shadow-lg"
-                        : "text-white/30"
-                    } transition-colors duration-200 hover:text-[#1db954]`}
-                  >
-                    <path
-                      d="M12 2L15.09 8.26L22 9L17 14L18.18 21L12 17.77L5.82 21L7 14L2 9L8.91 8.26L12 2Z"
-                      fill="currentColor"
-                    />
-                  </svg>
-                </button>
-              ))}
+        <form onSubmit={handleSubmit} className="space-y-2">
+          {/* First Row: Name and Rating */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+            {/* User Name Field */}
+            <div className="space-y-1">
+              <label htmlFor="user" className="block text-white font-medium text-sm">
+                Your Name *
+              </label>
+              <input
+                id="user"
+                type="text"
+                value={user}
+                onChange={(e) => setUser(e.target.value)}
+                placeholder="Enter your name..."
+                className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/50 outline-none focus:border-[#1db954] focus:ring-1 focus:ring-[#1db954]/20 transition-all duration-300"
+                required
+              />
             </div>
 
-            {/* Score Label */}
-            <div className="text-center">
-              <span className={`text-lg font-semibold ${score > 0 ? getScoreColor(score) : 'text-white/50'}`}>
-                {getScoreLabel(score)}
-              </span>
+            {/* Rating Stars */}
+            <div className="space-y-1">
+              <label className="block text-white font-medium text-sm">
+                Your Rating *
+              </label>
+              <div className="flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setScore(star)}
+                    onMouseEnter={() => setHoveredStar(star)}
+                    onMouseLeave={() => setHoveredStar(0)}
+                    className={`relative w-8 h-8 transition-all duration-200 ${
+                      star <= (hoveredStar || score) ? "scale-110" : "scale-100"
+                    }`}
+                  >
+                    <svg
+                      width="32"
+                      height="32"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className={`${
+                        star <= (hoveredStar || score)
+                          ? "text-[#1db954] drop-shadow-lg"
+                          : "text-white/30"
+                      } transition-colors duration-200 hover:text-[#1db954]`}
+                    >
+                      <path
+                        d="M12 2L15.09 8.26L22 9L17 14L18.18 21L12 17.77L5.82 21L7 14L2 9L8.91 8.26L12 2Z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                  </button>
+                ))}
+                <span className={`ml-2 text-sm font-medium ${score > 0 ? getScoreColor(score) : 'text-white/50'}`}>
+                  {getScoreLabel(score)}
+                </span>
+              </div>
             </div>
           </div>
 
           {/* Comment Field */}
-          <div className="space-y-2">
-            <label htmlFor="comment" className="block text-white font-medium">
+          <div className="space-y-1">
+            <label htmlFor="comment" className="block text-white font-medium text-sm">
               Comment (optional)
             </label>
             <textarea
@@ -155,13 +153,13 @@ export function RatingForm({albumTitle, albumArtist, albumId, onSubmit, onCancel
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="Share your thoughts about this album..."
-              rows={4}
-              className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/50 outline-none focus:border-[#1db954] focus:ring-2 focus:ring-[#1db954]/20 transition-all duration-300 resize-none"
+              rows={2}
+              className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/50 outline-none focus:border-[#1db954] focus:ring-1 focus:ring-[#1db954]/20 transition-all duration-300 resize-none"
             />
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-4 pt-4">
+          <div className="flex gap-3 pt-2">
             <button
               type="button"
               onClick={onCancel}

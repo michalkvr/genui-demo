@@ -22,5 +22,21 @@
     "genre": "Pop",
     "coverUrl": "https://example.com/thriller.jpg",
     "pickedAt": "2025-08-20T11:36:42.985Z"
+  },
+  {
+    "id": "backlog2",
+    "title": "Nevermind",
+    "artist": "Nirvana",
+    "genre": "Grunge",
+    "coverUrl": "https://example.com/nevermind.jpg",
+    "pickedAt": "2025-08-20T11:51:56.455Z"
+  },
+  {
+    "id": "backlog3",
+    "title": "The Wall",
+    "artist": "Pink Floyd",
+    "genre": "Progressive Rock",
+    "coverUrl": "https://example.com/the-wall.jpg",
+    "pickedAt": "2025-08-20T12:21:06.545Z"
   }
 ]

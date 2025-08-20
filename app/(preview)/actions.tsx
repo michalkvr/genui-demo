@@ -14,6 +14,8 @@ import {AlbumGrid} from "@/components/album-grid";
 import {StatsCard} from "@/components/stats-card";
 import {NominationFormWrapper} from "@/components/nomination-form-wrapper";
 import {RatingFormWrapper} from "@/components/rating-form-wrapper";
+import {RatingsTable} from "@/components/ratings-table";
+import {CommentsList} from "@/components/comments-list";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -110,7 +112,7 @@ const sendMessage = async (message: string) => {
     system: `\
       You are a UI orchestrator for Audio Odyssey, an album discovery and rating app. Use tools to fetch data from JSON, then return React components to render the result. 
 
-      Available components: AlbumCard, AlbumGrid, StatsCard, NominationForm, RatingForm.
+      Available components: AlbumCard, AlbumGrid, StatsCard, NominationForm, RatingForm, RatingsTable, CommentsList.
 
       Workflow:
       1. When users want to "nominate" an album, use showNominationForm tool
@@ -118,6 +120,8 @@ const sendMessage = async (message: string) => {
       3. When users ask about current week's album, use getCurrentWeekAlbum
       4. When users ask about backlog or nominations, use listBacklog
       5. When users ask about ratings for a specific album, use getAlbumRatings
+      6. When users ask for "all ratings" or want to see all album ratings, use getAllRatings tool
+      7. When users ask for "comments" or want to see ratings with comments, use getAllComments tool
       
       Always respond with React components, never raw HTML or text-only responses.
     `,
@@ -186,7 +190,7 @@ const sendMessage = async (message: string) => {
                 ],
               },
             ]);
-            return <Message role="assistant" content="No current week album found." />;
+            return <Message role="assistant" content="No current week album found."/>;
           }
 
           // Get ratings for this album (only if it's from albums.json)
@@ -225,17 +229,17 @@ const sendMessage = async (message: string) => {
           ]);
 
           return (
-            <Message 
-              role="assistant" 
+            <Message
+              role="assistant"
               content={
                 <div className="flex flex-col gap-4">
-                  <AlbumCard 
+                  <AlbumCard
                     title={showAlbum.title}
                     artist={showAlbum.artist}
                     genre={showAlbum.genre}
                     coverUrl={showAlbum.coverUrl}
                   />
-                  {!showNomination && <StatsCard avg={avg} count={ratingsCount} />}
+                  {!showNomination && <StatsCard avg={avg} count={ratingsCount}/>}
                 </div>
               }
             />
@@ -279,9 +283,9 @@ const sendMessage = async (message: string) => {
           ]);
 
           return (
-            <Message 
-              role="assistant" 
-              content={<AlbumGrid albums={limitedBacklog} />}
+            <Message
+              role="assistant"
+              content={<AlbumGrid albums={limitedBacklog}/>}
             />
           );
         },
@@ -293,8 +297,8 @@ const sendMessage = async (message: string) => {
         }),
         generate: async function* ({albumId}) {
           const ratings = readRatings().filter(r => r.albumId === albumId);
-          const avg = ratings.length > 0 
-            ? ratings.reduce((sum, r) => sum + r.score, 0) / ratings.length 
+          const avg = ratings.length > 0
+            ? ratings.reduce((sum, r) => sum + r.score, 0) / ratings.length
             : null;
           const comments = ratings.filter(r => r.comment).map(r => ({
             user: r.user,
@@ -338,9 +342,9 @@ const sendMessage = async (message: string) => {
           ]);
 
           return (
-            <Message 
-              role="assistant" 
-              content={<StatsCard avg={avg} count={ratings.length} />}
+            <Message
+              role="assistant"
+              content={<StatsCard avg={avg} count={ratings.length}/>}
             />
           );
         },
@@ -378,9 +382,9 @@ const sendMessage = async (message: string) => {
           ]);
 
           return (
-            <Message 
-              role="assistant" 
-              content={<NominationFormWrapper />}
+            <Message
+              role="assistant"
+              content={<NominationFormWrapper/>}
             />
           );
         },
@@ -393,7 +397,7 @@ const sendMessage = async (message: string) => {
           const currentAlbum = albums
             .filter(album => album.pickedAt)
             .sort((a, b) => new Date(b.pickedAt!).getTime() - new Date(a.pickedAt!).getTime())[0];
-          
+
           const toolCallId = generateId();
 
           if (!currentAlbum) {
@@ -423,7 +427,7 @@ const sendMessage = async (message: string) => {
               },
             ]);
 
-            return <Message role="assistant" content="No current album found to rate." />;
+            return <Message role="assistant" content="No current album found to rate."/>;
           }
 
           messages.done([
@@ -453,8 +457,8 @@ const sendMessage = async (message: string) => {
           ]);
 
           return (
-            <Message 
-              role="assistant" 
+            <Message
+              role="assistant"
               content={
                 <RatingFormWrapper
                   albumTitle={currentAlbum.title}
@@ -462,6 +466,90 @@ const sendMessage = async (message: string) => {
                   albumId={currentAlbum.id}
                 />
               }
+            />
+          );
+        },
+      },
+      getAllRatings: {
+        description: "Get all album ratings displayed in a table format",
+        parameters: z.object({}),
+        generate: async function* ({}) {
+          const ratings = readRatings();
+          const albums = readAlbums();
+          const toolCallId = generateId();
+
+          messages.done([
+            ...(messages.get() as CoreMessage[]),
+            {
+              role: "assistant",
+              content: [
+                {
+                  type: "tool-call",
+                  toolCallId,
+                  toolName: "getAllRatings",
+                  args: {},
+                },
+              ],
+            },
+            {
+              role: "tool",
+              content: [
+                {
+                  type: "tool-result",
+                  toolName: "getAllRatings",
+                  toolCallId,
+                  result: "All ratings table displayed",
+                },
+              ],
+            },
+          ]);
+
+          return (
+            <Message
+              role="assistant"
+              content={<RatingsTable ratings={ratings} albums={albums}/>}
+            />
+          );
+        },
+      },
+      getAllComments: {
+        description: "Get all album ratings with comments and stars displayed in a detailed format",
+        parameters: z.object({}),
+        generate: async function* ({}) {
+          const ratings = readRatings();
+          const albums = readAlbums();
+          const toolCallId = generateId();
+
+          messages.done([
+            ...(messages.get() as CoreMessage[]),
+            {
+              role: "assistant",
+              content: [
+                {
+                  type: "tool-call",
+                  toolCallId,
+                  toolName: "getAllComments",
+                  args: {},
+                },
+              ],
+            },
+            {
+              role: "tool",
+              content: [
+                {
+                  type: "tool-result",
+                  toolName: "getAllComments",
+                  toolCallId,
+                  result: "All comments and ratings displayed",
+                },
+              ],
+            },
+          ]);
+
+          return (
+            <Message
+              role="assistant"
+              content={<CommentsList ratings={ratings} albums={albums}/>}
             />
           );
         },
