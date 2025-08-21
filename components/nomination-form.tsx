@@ -3,6 +3,13 @@
 import {useState} from "react";
 import {motion} from "framer-motion";
 
+interface InitialData {
+  title?: string;
+  artist?: string;
+  genre?: string;
+  coverUrl?: string;
+}
+
 interface NominationFormProps {
   onSubmit: (nomination: {
     title: string;
@@ -11,13 +18,14 @@ interface NominationFormProps {
     coverUrl?: string;
   }) => void;
   onCancel: () => void;
+  initialData?: InitialData;
 }
 
-export function NominationForm({onSubmit, onCancel}: NominationFormProps) {
-  const [title, setTitle] = useState("");
-  const [artist, setArtist] = useState("");
-  const [genre, setGenre] = useState("");
-  const [coverUrl, setCoverUrl] = useState("");
+export function NominationForm({onSubmit, onCancel, initialData}: NominationFormProps) {
+  const [title, setTitle] = useState(initialData?.title || "");
+  const [artist, setArtist] = useState(initialData?.artist || "");
+  const [genre, setGenre] = useState(initialData?.genre || "");
+  const [coverUrl, setCoverUrl] = useState(initialData?.coverUrl || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {

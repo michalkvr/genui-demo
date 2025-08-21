@@ -3,11 +3,18 @@
 import { useState } from "react";
 import { NominationForm } from "./nomination-form";
 
-interface NominationFormWrapperProps {
-  // Add any props needed for the form, if required
+interface InitialData {
+  title?: string;
+  artist?: string;
+  genre?: string;
+  coverUrl?: string;
 }
 
-export function NominationFormWrapper(props: NominationFormWrapperProps) {
+interface NominationFormWrapperProps {
+  initialData?: InitialData;
+}
+
+export function NominationFormWrapper({ initialData }: NominationFormWrapperProps) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -48,7 +55,7 @@ export function NominationFormWrapper(props: NominationFormWrapperProps) {
       <NominationForm
         onSubmit={handleSubmit}
         onCancel={handleCancel}
-        {...props}
+        initialData={initialData}
       />
       {submitting && <p className="text-blue-500 mt-4">Submitting...</p>}
       {success && <p className="text-green-500 mt-4">Nomination submitted successfully!</p>}
@@ -56,4 +63,3 @@ export function NominationFormWrapper(props: NominationFormWrapperProps) {
     </div>
   );
 }
-
