@@ -1,15 +1,9 @@
 "use client";
 
-import {ReactNode, useRef, useState} from "react";
+import {useRef, useState} from "react";
 import {useActions, useUIState} from "ai/rsc";
-import {Message} from "@/components/message";
 import {useScrollToBottom} from "@/components/use-scroll-to-bottom";
 import {motion} from "framer-motion";
-import {MasonryIcon, VercelIcon} from "@/components/icons";
-import Link from "next/link";
-import ratings from "@/data/ratings.json";
-import albums from "@/data/albums.json";
-import {CommentsList} from "@/components/comments-list";
 
 export default function Home() {
   const {sendMessage} = useActions();
@@ -18,7 +12,7 @@ export default function Home() {
   const [input, setInput] = useState<string>("");
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const [messagesContainerRef, messagesEndRef] =
+  const [messagesContainerRef, messagesEndRef, scrollToPageBottom] =
     useScrollToBottom<HTMLDivElement>();
 
   const suggestedActions = [
@@ -99,7 +93,7 @@ export default function Home() {
 
       {/* Main content area */}
       <div className="flex-1 flex flex-row justify-center px-4 lg:px-8">
-        <div className="w-full max-w-6xl flex flex-col gap-8 pt-8 pb-20">
+        <div className="w-full max-w-6xl flex flex-col gap-8 pt-8 pb-28">
           {/* Messages container */}
           <div
             ref={messagesContainerRef}
@@ -157,8 +151,12 @@ export default function Home() {
                 const currentInput = input;
                 setInput("");
 
+                // ===============================
+                // Call RSC Send message on submit
+                // ===============================
                 const newMessages = await sendMessage(currentInput);
                 setMessages([...messages, ...newMessages]);
+                // ===============================
               }}
             >
               <div className="glass-effect rounded-full p-2 bg-black/20 backdrop-blur-lg border border-white/20">

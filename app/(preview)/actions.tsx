@@ -8,7 +8,11 @@ import {
   streamUI,
 } from "ai/rsc";
 import {ReactNode} from "react";
-import {createTools} from "@/lib/tools";
+import {
+  createGetAlbumRatingsTool, createGetAllCommentsTool, createGetAllRatingsTool,
+  createGetCurrentWeekAlbumTool,
+  createListBacklogTool, createShowNominationFormTool, createShowRatingFormTool,
+} from "@/lib/tools";
 
 const sendMessage = async (message: string) => {
   "use server";
@@ -40,7 +44,20 @@ const sendMessage = async (message: string) => {
       }
       return textComponent;
     },
-    tools: createTools(messages),
+
+    // =========================
+    // Providing tools to the AI
+    // =========================
+    tools: {
+      getCurrentWeekAlbum: createGetCurrentWeekAlbumTool(messages),
+      listBacklog: createListBacklogTool(messages),
+      getAlbumRatings: createGetAlbumRatingsTool(messages),
+      showNominationForm: createShowNominationFormTool(messages),
+      showRatingForm: createShowRatingFormTool(messages),
+      getAllRatings: createGetAllRatingsTool(messages),
+      getAllComments: createGetAllCommentsTool(messages),
+    },
+    // =========================
   });
 
   return [<Message key={generateId()} role="user" content={message}/>, stream];

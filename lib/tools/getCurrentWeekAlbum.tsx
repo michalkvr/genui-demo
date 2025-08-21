@@ -5,9 +5,13 @@ import {StatsCard} from "@/components/stats-card";
 import {AlbumService} from "../services/album";
 import {appendToolMessages} from "./utils";
 
+// ========================================================================
+// Fetch data, calculate stats, and return a message with the album details
+// ========================================================================
+
 export const createGetCurrentWeekAlbumTool = (messages: any) => ({
   description: "Get the current week's album (most recent by pickedAt or nomination)",
-  parameters: z.object({}),
+  parameters: z.object({}), // You can add call parameters if needed
   generate: async function* ({}: {}) {
     const result = AlbumService.getCurrentWeekAlbum();
 
@@ -18,7 +22,6 @@ export const createGetCurrentWeekAlbumTool = (messages: any) => ({
 
     const {album, isNomination} = result;
 
-    // Get ratings for this album (only if it's from albums.json)
     let avg = null;
     let ratingsCount = 0;
     if (!isNomination) {
